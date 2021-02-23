@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "DHT.h"
 
-#define DHTPIN 4
+#define DHTPIN 0
 #define DHTTYPE DHT11
 
 DHT dht(DHTPIN, DHTTYPE);
@@ -29,4 +29,5 @@ void readDHT() {
   Serial.print(t);
   Serial.print(F("°C "));
   Serial.print(hic);
+  Serial.print("\n");
 }

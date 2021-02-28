@@ -1,0 +1,2 @@
+void RTCBegin();
+void getTime();

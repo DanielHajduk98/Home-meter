@@ -14,6 +14,6 @@ void setup() {
 void loop() {
   delay(MEASURE_INTERVAL);
 
-  // readDHT(); 
+  readDHT(); 
   getTime();
 }

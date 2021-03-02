@@ -18,18 +18,15 @@ void BMP280Begin() {
     Serial.println(F("BMP280 test"));
 }
 
-void readBMP280() {
-    Serial.print(F("Temperature = "));
-    Serial.print(bmp.readTemperature());
-    Serial.println(" *C");
+float getTemp(bool inF = false) {
+    const float celsius = bmp.readTemperature();
+    if(inF) {
+        return (celsius * 9.0) / 5.0 + 32;
+    }
+    return celsius;
+}
 
-    Serial.print(F("Pressure = "));
-    Serial.print(bmp.readPressure()/100); //displaying the Pressure in hPa, you can change the unit
-    Serial.println(" hPa");
-
-    Serial.print(F("Approx altitude = "));
-    Serial.print(bmp.readAltitude(1019.66)); //The "1019.66" is the pressure(hPa) at sea level in day in your region
-    Serial.println(" m");                    //If you don't know it, modify it until you get your current altitude
-
-    Serial.println();
+// In hPa
+float getPressure() {
+    return (bmp.readPressure()/100);
 }

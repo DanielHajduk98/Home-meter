@@ -1,2 +1,3 @@
 void BMP280Begin();
-void readBMP280();
+float getTemp(bool = false);
+float getPressure();

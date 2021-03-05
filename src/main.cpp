@@ -17,10 +17,15 @@
 // #include "RTC.h"
 #include "BMP280.h"
 #include "GY30.h"
+#include "Motion.h"
 
-#define MEASURE_INTERVAL 10000
+#define MEASURE_INTERVAL 1000
 unsigned long millisCurrent;
 unsigned long millisLastPrint = 0;
+
+// Motion
+unsigned int movement = 0;
+unsigned int millisLastMotion = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -29,6 +34,7 @@ void setup() {
   GY30Begin();
   BMP280Begin();
   DHTBegin();
+  motionSetup();
   // RTCBegin();
 }
 
@@ -39,6 +45,7 @@ void loop() {
     const float t = getTemp();
     const float RH = getRH();
 
+    Serial.println("Movement: " + (String)movement);
     Serial.println("Temperature: " + (String)t + "°C");
     Serial.println("Air pressure: " + (String)getPressure() + "hPa");
     Serial.println("Relative humidity: " + (String)RH + "%");
@@ -47,5 +54,11 @@ void loop() {
     Serial.println();
 
     millisLastPrint = millisCurrent; 
+
+    // Reset motion value for next interval
+    movement = 0;
+  } else if ((millisCurrent - millisLastMotion) >= 200) {
+    movement = getMovement();
+    millisLastMotion = millisCurrent;
   }
 }

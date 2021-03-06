@@ -1,21 +1,20 @@
-#include <Wire.h>
-#include <BH1750.h>
+#include <GY30.h>
 
-BH1750 lightMeter(0x23);
+GY30::GY30()
+  : BH1750() {}
 
-void GY30Begin(){
-  if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
+void GY30::begin() {
+  if (BH1750::begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
     Serial.println(F("BH1750 Advanced begin"));
   }
   else {
     Serial.println(F("Error initialising BH1750"));
   }
-
 }
 
-float getLx() {
-  if (lightMeter.measurementReady()) {
-    float lux = lightMeter.readLightLevel();
+float GY30::getLux() {
+  if (BH1750::measurementReady()) {
+    lux = BH1750::readLightLevel();
     return lux;
   }
 }

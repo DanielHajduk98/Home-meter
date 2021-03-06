@@ -1,2 +1,0 @@
-void motionSetup();
-byte getMovement();

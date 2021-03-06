@@ -13,28 +13,29 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#include "DHT11.h"
+#include "DHT.h"
 // #include "RTC.h"
 #include "BMP280.h"
+#include "PIR.h"
 #include "GY30.h"
-#include "Motion.h"
 
 #define MEASURE_INTERVAL 1000
 unsigned long millisCurrent;
 unsigned long millisLastPrint = 0;
 
-// Motion
-unsigned int movement = 0;
-unsigned int millisLastMotion = 0;
+PIR pir(D5);
+DHT dht(D3, DHT11);
+GY30 gy30;
+BMP280 bmp280;
 
 void setup() {
   Serial.begin(115200);
   Wire.begin();
 
-  GY30Begin();
-  BMP280Begin();
-  DHTBegin();
-  motionSetup();
+  dht.begin();
+  gy30.begin();
+  bmp280.begin();
+
   // RTCBegin();
 }
 
@@ -42,23 +43,22 @@ void loop() {
   millisCurrent = millis();
   
   if((millisCurrent - millisLastPrint) >= MEASURE_INTERVAL) {
-    const float t = getTemp();
-    const float RH = getRH();
+    const float temp = bmp280.getTemp();
+    const float RH = dht.readHumidity();
 
-    Serial.println("Movement: " + (String)movement);
-    Serial.println("Temperature: " + (String)t + "°C");
-    Serial.println("Air pressure: " + (String)getPressure() + "hPa");
+    Serial.println("Movement: " + (String)pir.movement);
+    Serial.println("Temperature: " + (String)temp + "°C");
+    Serial.println("Air pressure: " + (String)bmp280.getPressure() + "hPa");
     Serial.println("Relative humidity: " + (String)RH + "%");
-    Serial.println("Heat index: " + (String)getHI(t, RH));
-    Serial.println("Lux: " + (String)getLx() + "lx");   
+    Serial.println("Heat index: " + (String)dht.computeHeatIndex(temp, RH));
+    Serial.println("Lux: " + (String)gy30.getLux() + "lx");   
     Serial.println();
 
     millisLastPrint = millisCurrent; 
 
-    // Reset motion value for next interval
-    movement = 0;
-  } else if ((millisCurrent - millisLastMotion) >= 200) {
-    movement = getMovement();
-    millisLastMotion = millisCurrent;
+    pir.movement = 0;
+  } else if ((millisCurrent - pir.millisLast) >= 200) {
+    pir.getMovement();
+    pir.millisLast= millisCurrent;
   }
 }

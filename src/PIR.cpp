@@ -10,6 +10,6 @@ void PIR::init() {
 }
 
 byte PIR::getMovement() {
-    movement = digitalRead (pin) == HIGH ? 1 : 0;
+    movement += digitalRead (pin) == HIGH ? 1 : 0;
     return movement;
 }

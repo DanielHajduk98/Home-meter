@@ -6,7 +6,14 @@ API::API(String url) {
     this->url = url;
 }
 
-void API::sendMeasurements(float temperature,float humidity, float air_pressure, float lumionsity, bool movement) {
+void API::sendMeasurements(
+    float temperature,
+    float humidity,
+    float air_pressure,
+    float lumionsity,
+    byte movement,
+    float heatIndex) 
+  {
     WiFiClient client;
     HTTPClient http;
 
@@ -20,6 +27,7 @@ void API::sendMeasurements(float temperature,float humidity, float air_pressure,
         ",\"humidity\":\"" + (String)humidity + "\"" +
         ",\"luminosity\":\"" + (String)lumionsity + "\"" +
         ",\"movement\":\"" + (String)movement +"\"" +
+        ",\"heat_index\":\"" + (String)heatIndex +"\"" +
         ",\"air_pressure\":\"" + (String)air_pressure + "\"}");
 
     if (httpCode > 0) {

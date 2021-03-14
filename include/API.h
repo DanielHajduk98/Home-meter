@@ -14,7 +14,8 @@ class API {
             float humidity,
             float air_pressure,
             float lumionsity,
-            bool movement);
+            byte movement,
+            float heatIndex);
 };
 
 #endif

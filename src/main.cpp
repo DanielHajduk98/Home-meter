@@ -5,7 +5,6 @@
 // Air pressure (BMP280)
 // Sound (problem with measuring db)
 // Lux intensity (GW-30)
-// Time (DS1302). Might resign from using this sensor as it might not be needed
 // CO levels. Problem with proper calibration of MQ-7 sensor
 // Movement levels (PIR HC501). Constant measurements.
 // Heat index (T via BMP280 and RH via DHT-11)
@@ -16,18 +15,17 @@
 #include <ESP8266WiFi.h>
 
 #include <DHT.h>
-// #include <RTC.h>
 #include <BMP280.h>
 #include <PIR.h>
 #include <GY30.h>
 #include <API.h>
 
-#define MEASURE_INTERVAL 10000
+#define MEASURE_INTERVAL 60000 * 2 // 2 min
 unsigned long millisCurrent;
 unsigned long millisLastPrint = 0;
 
 #define STASSID ""
-#define STAPSK  "
+#define STAPSK  ""
 
 PIR pir(D5);
 DHT dht(D3, DHT11);
@@ -39,7 +37,7 @@ void setup() {
   Serial.begin(115200);
   Wire.begin();
 
-  dht.begin();
+  dht.begin(); 
   gy30.begin();
   bmp280.begin();
 
@@ -51,8 +49,6 @@ void setup() {
   Serial.println("");
   Serial.print("Connected! IP address: ");
   Serial.println(WiFi.localIP());
-
-  // RTCBegin();
 }
 
 void loop() {
@@ -61,12 +57,12 @@ void loop() {
   if((millisCurrent - millisLastPrint) >= MEASURE_INTERVAL) {
     const float temp = bmp280.getTemp();
     const float RH = dht.readHumidity();
-    
+    const float heatIndex = dht.computeHeatIndex(temp, RH);
     Serial.println("Movement: " + (String)pir.movement);
     Serial.println("Temperature: " + (String)temp + "°C");
     Serial.println("Air pressure: " + (String)bmp280.getPressure() + "hPa");
     Serial.println("Relative humidity: " + (String)RH + "%");
-    Serial.println("Heat index: " + (String)dht.computeHeatIndex(temp, RH));
+    Serial.println("Heat index: " + (String)heatIndex);
     Serial.println("Lux: " + (String)gy30.getLux() + "lx");   
     Serial.println();
 
@@ -77,11 +73,12 @@ void loop() {
       RH,
       bmp280.getPressure(),
       gy30.lux,
-      pir.movement
+      pir.movement,
+      heatIndex
     );
 
     pir.movement = 0;
-  } else if ((millisCurrent - pir.millisLast) >= 200) {
+  } else if ((millisCurrent - pir.millisLast) >= 3000) {
     pir.getMovement();
     pir.millisLast= millisCurrent;
   }

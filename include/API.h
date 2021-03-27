@@ -6,7 +6,9 @@
 class API {
     private:
         String url;
-    
+        long monitor_id;
+        void create();
+
     public:
         API(String url);
         void sendMeasurements(

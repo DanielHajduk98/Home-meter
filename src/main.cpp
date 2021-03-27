@@ -9,10 +9,10 @@
 // Movement levels (PIR HC501). Constant measurements.
 // Heat index (T via BMP280 and RH via DHT-11)
 
+#include <WiFiManager.h> 
+
 #include <Arduino.h>
 #include <Wire.h>
-#include <ESP8266HTTPClient.h>
-#include <ESP8266WiFi.h>
 
 #include <DHT.h>
 #include <BMP280.h>
@@ -20,7 +20,9 @@
 #include <GY30.h>
 #include <API.h>
 
-#define MEASURE_INTERVAL 60000 * 2 // 2 min
+WiFiManager wifiManager;
+
+#define MEASURE_INTERVAL 10000// 15 min
 unsigned long millisCurrent;
 unsigned long millisLastPrint = 0;
 
@@ -31,9 +33,14 @@ PIR pir(D5);
 DHT dht(D3, DHT11);
 GY30 gy30;
 BMP280 bmp280;
-API api("http://192.168.1.27:81/api/measurement/");
+API api("http://192.168.1.27:81/api");
 
 void setup() {
+  wifiManager.autoConnect("Home-meter");
+
+  // reset settings - wipe credentials for testing
+  // wifiManager.resetSettings();
+
   Serial.begin(115200);
   Wire.begin();
 
@@ -41,17 +48,10 @@ void setup() {
   gy30.begin();
   bmp280.begin();
 
-  WiFi.begin(STASSID, STAPSK);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected! IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.println("Connected! IP address: ");
 }
 
-void loop() {
+void loop() {  
   millisCurrent = millis();
   
   if((millisCurrent - millisLastPrint) >= MEASURE_INTERVAL) {

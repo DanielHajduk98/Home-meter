@@ -47,8 +47,7 @@ void setup() {
   dht.begin(); 
   gy30.begin();
   bmp280.begin();
-
-  Serial.println("Connected! IP address: ");
+  api.setup();
 }
 
 void loop() {  

@@ -6,11 +6,12 @@
 class API {
     private:
         String url;
-        long monitor_id;
-        void create();
 
     public:
         API(String url);
+
+        void setup();
+
         void sendMeasurements(
             float temperature,
             float humidity,

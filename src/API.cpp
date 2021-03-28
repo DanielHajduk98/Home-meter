@@ -4,42 +4,21 @@
 #include <EEPROM.h>
 
 API::API(String url) {
-    EEPROM.begin(512);
-    create();
-
     this->url = url;
 }
 
-void API::create() {
-  // Check if ID is saved
-  this->monitor_id = EEPROM.get(0, monitor_id);
+void API::setup() {
+  WiFiClient client;
+  HTTPClient http;
 
-  Serial.println(this->monitor_id);
-
-  if (!monitor_id)
-  {
-    WiFiClient client;
-    HTTPClient http;
-
-    http.begin(client, url + "/monitor");
-    http.addHeader("Content-Type", "application/json");
-    
-    Serial.println(WiFi.macAddress());
-
-    long monitor_id = http.POST("{\"name\":\"\",\"macAddress\":\"" + WiFi.macAddress() + "\"");
-
-    Serial.println(monitor_id);
-
-    if (monitor_id)
-    {
-      EEPROM.put(0, monitor_id);
-      this->monitor_id = monitor_id;
-    }
-    
-
-    http.end();
-  }
+  http.begin(client, url + "/monitor");
+  http.addHeader("Content-Type", "application/json");
   
+  int httpCode = http.POST("{\"macAddress\":\"" + WiFi.macAddress() + "\"}");
+
+  Serial.println(httpCode);
+
+  http.end();  
 }
 
 void API::sendMeasurements(
@@ -56,10 +35,8 @@ void API::sendMeasurements(
     http.begin(client, url + "/measurement");
     http.addHeader("Content-Type", "application/json");
     
-    Serial.println(this->monitor_id);
-
     int httpCode = http.POST(
-        "{\"monitor_id\":\"" + (String)this->monitor_id + "\"" +
+        "{\"monitor_mac\":\"" + (String)WiFi.macAddress() + "\"" +
         ",\"temperature\":\"" + (String)temperature + "\"" +
         ",\"humidity\":\"" + (String)humidity + "\"" +
         ",\"luminosity\":\"" + (String)lumionsity + "\"" +

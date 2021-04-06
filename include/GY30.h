@@ -6,15 +6,9 @@
 #include <Wire.h>
 
 class GY30 : public BH1750 {
-    private: 
-
     public:
         GY30();
-
-        float lux;
-
         void begin();
-        float getLux();
 };
 
 #endif

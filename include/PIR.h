@@ -6,13 +6,12 @@
 class PIR {
     private:
         byte pin;
-    
+        void init();
+
     public:
         PIR(byte pin);
-        byte movement;
         unsigned int millisLast;
-        void init();
-        byte getMovement();
+        byte read();
 };
 
 #endif

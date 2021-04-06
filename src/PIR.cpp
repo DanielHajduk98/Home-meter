@@ -9,7 +9,6 @@ void PIR::init() {
     pinMode(pin, INPUT);
 }
 
-byte PIR::getMovement() {
-    movement += digitalRead (pin) == HIGH ? 1 : 0;
-    return movement;
+byte PIR::read() {
+    return digitalRead (pin) == HIGH ? 1 : 0;
 }

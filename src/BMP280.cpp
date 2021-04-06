@@ -15,16 +15,3 @@ void BMP280::begin() {
                     Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                     Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
 }
-
-float BMP280::getPressure() {
-    pressure = Adafruit_BMP280::readPressure()/100;
-    return pressure;
-}
-
-float BMP280::getTemp(bool inF) {
-    temp = Adafruit_BMP280::readTemperature();
-    if(inF) {
-        return (temp * 9.0) / 5.0 + 32;
-    }
-    return temp;
-}

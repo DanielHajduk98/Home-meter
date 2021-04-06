@@ -11,10 +11,3 @@ void GY30::begin() {
     Serial.println(F("Error initialising BH1750"));
   }
 }
-
-float GY30::getLux() {
-  if (BH1750::measurementReady()) {
-    lux = BH1750::readLightLevel();
-    return lux;
-  }
-}

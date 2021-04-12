@@ -8,7 +8,7 @@
 class GY30 : public BH1750 {
     public:
         GY30();
-        void begin();
+        bool begin();
 };
 
 #endif

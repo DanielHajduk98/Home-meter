@@ -11,8 +11,10 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <ESP8266WiFi.h>
 
-#define MEASURE_INTERVAL 900000 // 15 min
+#define MEASURE_INTERVAL 10000
+#define POST_INTERVAL 1000 * 60 * 15
 
 WiFiManager wifiManager;
 PIR pir(D5);
@@ -24,6 +26,7 @@ Adafruit_SSD1306 display = Adafruit_SSD1306(128, 64, &Wire);
 
 unsigned long millisCurrent;
 unsigned long millisLastMeasurement = 0;
+unsigned long millisLastPost = 0;
 
 float temp = 0;
 float RH = 0;
@@ -97,6 +100,27 @@ static const unsigned char PROGMEM emoji_danger[] = {
  B11011011,
 };
 
+static const unsigned char PROGMEM arrow_up[] = {
+ B00000000,
+ B00011000,
+ B00111100,
+ B01111110,
+ B00011000,
+ B00011000,
+ B00011000,
+ B00000000,
+};
+
+static const unsigned char PROGMEM arrow_down[] = {
+ B00000000,
+ B00011000,
+ B00011000,
+ B00011000,
+ B01111110,
+ B00111100,
+ B00011000,
+ B00000000,
+};
 
 void drawHeatIndexEmoji() {
   if (26 >= HI && HI <= 32) {
@@ -113,7 +137,7 @@ void drawHeatIndexEmoji() {
 
 
 void displayMeasurements() {
-  int progress = ((millisCurrent - millisLastMeasurement) * 128) / ((MEASURE_INTERVAL)); 
+  int progress = ((millisCurrent - millisLastPost) * 128) / (POST_INTERVAL); 
 
   display.setCursor(0,0);
   display.clearDisplay();
@@ -123,16 +147,42 @@ void displayMeasurements() {
   display.fillRect(2, 2, progress - 4 , 4, WHITE);
     
   display.println("");
-  display.println("--Last measurements--");
+  display.drawBitmap(display.getCursorX(), display.getCursorY(), arrow_up, 8, 8, WHITE);
+  display.setCursor(display.getCursorX() + 8, display.getCursorY());
+  display.print("Next save");
+  display.drawBitmap(display.getCursorX(), display.getCursorY(), arrow_up, 8, 8, WHITE); 
+  display.setCursor(display.getCursorX() + 8, display.getCursorY());
+  display.drawBitmap(display.getCursorX(), display.getCursorY(), arrow_down, 8, 8, WHITE);
+  display.setCursor(display.getCursorX() + 8, display.getCursorY());
+  display.print("Current"); 
+  display.drawBitmap(display.getCursorX(), display.getCursorY(), arrow_down, 8, 8, WHITE);
+  display.println("");
+
   display.print("Temperature: " + (String)temp); display.write(248); display.println("C");
   display.println("Humidity: " + (String)RH + "%");
-  display.println("Mov: " + (String)movement + " Lux: " + (String)lightLevel + " lx");
+  display.println("Mov: " + (String)movement + " Lum: " + (String)lightLevel + " Lux");
   display.println("Atm Pressure: " + (String)pressure + "hPa");
   display.print("Heat Index: "); drawHeatIndexEmoji(); display.println("");
 
   display.display();
 }
 
+void configModeCallback (WiFiManager *myWiFiManager) {
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.println("No saved WiFi found.");
+  display.println("Connect to network:");
+  display.println(myWiFiManager->getConfigPortalSSID());
+  display.println("Then go to this URL:");
+  display.println(WiFi.softAPIP());
+  display.display();
+}
+void saveConfigFallback () {
+  Serial.println("Entered save confiig falback mode");
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.display();
+}
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 // Setup + Loop
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -154,23 +204,45 @@ void setup() {
   display.println("Starting Wifi...");
   display.display();
   
-  wifiManager.autoConnect("Home-meter");
-
   // reset settings - wipe credentials for testing
   // wifiManager.resetSettings();
+  
+   wifiManager.setAPCallback(configModeCallback);
+   wifiManager.setSaveConfigCallback(saveConfigFallback);
 
+  if (!wifiManager.autoConnect("Home-meter")) {
+    Serial.println("Failed to connect and hit timeout");
+
+    display.println("Connection failed!");
+    display.display();
+  } else {
+    display.println("Connected to:");
+    display.println(WiFi.SSID());
+    display.display();
+  }
+  
   display.println("Starting DHT...");
   display.display();
 
-  dht.begin(); 
+  dht.begin() ;
+  if(!dht.readTemperature()){
+    display.println("DHT init error");
+    display.display();
+  }
 
   display.println("Starting GY30...");
   display.display();
-  gy30.begin();
+  if(!gy30.begin()) {
+    display.println("GY30 init error");
+    display.display();  
+  }
 
   display.println("Starting BMP280...");
   display.display();
-  bmp280.begin();
+  if(!bmp280.begin()){
+    display.println("BMP280 init error");
+    display.display();
+  }
 
   display.println("Checking server...");
   display.display();
@@ -184,7 +256,10 @@ void loop() {
 
   if((millisCurrent - millisLastMeasurement) >= MEASURE_INTERVAL) {
     collectMeasurements();
-    
+  }
+  if((millisCurrent - millisLastPost) >= POST_INTERVAL) {
+    collectMeasurements();
+  
     api.sendMeasurements(
       temp,
       RH,
@@ -195,11 +270,20 @@ void loop() {
     );
 
     movement = 0;
+    millisLastPost = millisCurrent;
   } 
-  else if ((millisCurrent - pir.millisLast) >= 3000) {
+  if ((millisCurrent - pir.millisLast) >= 3000) {
     movement += pir.read();
     pir.millisLast = millisCurrent;
   }
 
-  displayMeasurements();
+  if (WiFi.status() == 6)
+  {
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.println("Lost WiFi connection!");
+    display.display();
+  } else {
+    displayMeasurements();
+  }
 }

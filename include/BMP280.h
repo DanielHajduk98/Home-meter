@@ -7,7 +7,7 @@
 class BMP280 : public Adafruit_BMP280 {
     public:
         BMP280();
-        void begin();
+        bool begin();
 };
 
 #endif

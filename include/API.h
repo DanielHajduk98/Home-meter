@@ -10,7 +10,7 @@ class API {
     public:
         API(String url);
 
-        void setup();
+        int setup();
 
         void sendMeasurements(
             float temperature,

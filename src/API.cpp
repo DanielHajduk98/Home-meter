@@ -7,7 +7,7 @@ API::API(String url) {
     this->url = url;
 }
 
-void API::setup() {
+int API::setup() {
   WiFiClient client;
   HTTPClient http;
 
@@ -19,6 +19,8 @@ void API::setup() {
   Serial.println(httpCode);
 
   http.end();  
+
+  return httpCode;
 }
 
 void API::sendMeasurements(

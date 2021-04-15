@@ -140,3 +140,8 @@ void Display::displayMeasurements(unsigned int POST_INTERVAL, unsigned long mill
 
   Adafruit_SSD1306::display();
 }
+
+void Display::clear() {
+  Adafruit_SSD1306::clearDisplay();
+  Adafruit_SSD1306::setCursor(0,0); 
+}

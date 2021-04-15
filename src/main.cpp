@@ -58,23 +58,22 @@ void saveConfigFallback () {
   display.setCursor(0,0);
   display.display();
 }
+
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 // Setup + Loop
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
-
 void setup() {
   Serial.begin(115200);
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-
+  
   display.println("Starting Wifi...");
   display.display();
   
   // reset settings - wipe credentials for testing
   // wifiManager.resetSettings();
-  
-   wifiManager.setAPCallback(configModeCallback);
-   wifiManager.setSaveConfigCallback(saveConfigFallback);
+  wifiManager.setAPCallback(configModeCallback);
+  wifiManager.setSaveConfigCallback(saveConfigFallback);
 
   if (!wifiManager.autoConnect("Home-meter")) {
     Serial.println("Failed to connect and hit timeout");
@@ -90,29 +89,47 @@ void setup() {
   display.println("Starting DHT...");
   display.display();
 
-  dht.begin() ;
-  if(!dht.readTemperature()){
-    display.println("DHT init error");
+  dht.begin();
+
+  if(isnan(dht.readTemperature())) {
+    display.clear();
+    display.println("DHT init error!");
+    display.println("Check DHT connection!");
     display.display();
+
+    while (isnan(dht.readTemperature())){
+      delay(1000);
+    } 
+
+    display.clear();
   }
 
   display.println("Starting GY30...");
   display.display();
-  if(!gy30.begin()) {
-    display.println("GY30 init error");
-    display.display();  
+  while(!gy30.begin()) {
+    delay(1000);
   }
 
   display.println("Starting BMP280...");
   display.display();
-  if(!bmp280.begin()){
-    display.println("BMP280 init error");
-    display.display();
+  while (!bmp280.begin()){
+   delay(1000);
   }
-
+   
   display.println("Checking server...");
   display.display();
-  api.setup();
+  
+  switch (api.setup()){
+  case -1:
+    display.clear();
+    display.println("Server offline");
+    display.display();
+    delay(1000);
+    break;
+  
+  default:
+    break;
+  }
 
   collectMeasurements();
 }
@@ -145,8 +162,7 @@ void loop() {
 
   if (WiFi.status() == 6)
   {
-    display.clearDisplay();
-    display.setCursor(0,0);
+    display.clear();
     display.println("Lost WiFi connection!");
     display.display();
   } else {

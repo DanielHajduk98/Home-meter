@@ -16,8 +16,6 @@ int API::setup() {
   
   int httpCode = http.POST("{\"macAddress\":\"" + WiFi.macAddress() + "\"}");
 
-  Serial.println(httpCode);
-
   http.end();  
 
   return httpCode;

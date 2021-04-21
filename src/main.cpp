@@ -11,6 +11,8 @@
 
 #define MEASURE_INTERVAL 10000
 #define POST_INTERVAL 1000 * 60 * 15
+#define PIR_INTERVAL 3000
+#define BTN_DEBOUNCE_TIME 200
 
 WiFiManager wifiManager;
 PIR pir(D5);
@@ -30,8 +32,11 @@ float HI = 0;
 unsigned int pressure = 0;
 unsigned int movement = 0;
 unsigned int lightLevel = 0;
+unsigned int btnDebounce = 0;
 
 void collectMeasurements() {
+  Serial.println("Collecting measurements");
+
   temp = bmp280.readTemperature();
   pressure = bmp280.readPressure() / 100;
   RH = dht.readHumidity();
@@ -42,6 +47,7 @@ void collectMeasurements() {
 }
 
 void configModeCallback (WiFiManager *myWiFiManager) {
+  display.dim(false);
   display.clearDisplay();
   display.setCursor(0,0);
   display.println("No saved WiFi found.");
@@ -54,16 +60,20 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 
 void saveConfigFallback () {
   Serial.println("Entered save confiig falback mode");
+  display.dim(false);
   display.clearDisplay();
   display.setCursor(0,0);
   display.display();
 }
+
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 // Setup + Loop
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 void setup() {
   Serial.begin(115200);
+
+  pinMode(D6, INPUT);
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   
@@ -130,16 +140,14 @@ void setup() {
   default:
     break;
   }
-
+  
   collectMeasurements();
 }
 
 void loop() {  
   millisCurrent = millis();
 
-  if((millisCurrent - millisLastMeasurement) >= MEASURE_INTERVAL) {
-    collectMeasurements();
-  }
+  //Send measurement
   if((millisCurrent - millisLastPost) >= POST_INTERVAL) {
     collectMeasurements();
   
@@ -155,17 +163,37 @@ void loop() {
     movement = 0;
     millisLastPost = millisCurrent;
   } 
-  if ((millisCurrent - pir.millisLast) >= 3000) {
+
+  //Get movement every 3s
+  if ((millisCurrent - pir.millisLast) >= PIR_INTERVAL) {
     movement += pir.read();
     pir.millisLast = millisCurrent;
   }
 
-  if (WiFi.status() == 6)
-  {
+  //Check wifi. Show err if lost connection
+  if (WiFi.status() == 6){
     display.clear();
     display.println("Lost WiFi connection!");
     display.display();
-  } else {
+  } else if(display.turnedOn) {
     display.displayMeasurements(POST_INTERVAL, millisCurrent, millisLastPost, temp, RH, HI, pressure, lightLevel, movement);
+  }
+
+  // Toggle screen on btn press
+  if (digitalRead(D6)){
+    Serial.println("Btn pressed");
+
+    // Debounce prevention
+    if ((millisCurrent - btnDebounce) >= BTN_DEBOUNCE_TIME) {
+      display.toggleScreen();
+      collectMeasurements();
+    }
+
+    btnDebounce = millisCurrent;
+  }
+  
+  //Collect measurement when screen is turned on
+  if(display.turnedOn && (millisCurrent - millisLastMeasurement) >= MEASURE_INTERVAL) {
+    collectMeasurements();
   }
 }

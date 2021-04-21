@@ -78,10 +78,10 @@ static const unsigned char PROGMEM arrow_down[] = {
 };
 
 
-// we always need a class constructor
 Display::Display(byte w, byte h, TwoWire *wire)
     : Adafruit_SSD1306(w, h, wire)
 {
+    turnedOn = true;
 }
 
 void Display::begin(uint8_t vcs, uint8_t addr){
@@ -123,12 +123,13 @@ void Display::displayMeasurements(unsigned int POST_INTERVAL, unsigned long mill
   Adafruit_SSD1306::println("");
   Adafruit_SSD1306::drawBitmap(Adafruit_SSD1306::getCursorX(), Adafruit_SSD1306::getCursorY(), arrow_up, 8, 8, WHITE);
   Adafruit_SSD1306::setCursor(Adafruit_SSD1306::getCursorX() + 8, Adafruit_SSD1306::getCursorY());
-  Adafruit_SSD1306::print("Next save");
+  Adafruit_SSD1306::print("  Until next save ");
   Adafruit_SSD1306::drawBitmap(Adafruit_SSD1306::getCursorX(), Adafruit_SSD1306::getCursorY(), arrow_up, 8, 8, WHITE); 
   Adafruit_SSD1306::setCursor(Adafruit_SSD1306::getCursorX() + 8, Adafruit_SSD1306::getCursorY());
+  Adafruit_SSD1306::println("");
   Adafruit_SSD1306::drawBitmap(Adafruit_SSD1306::getCursorX(), Adafruit_SSD1306::getCursorY(), arrow_down, 8, 8, WHITE);
   Adafruit_SSD1306::setCursor(Adafruit_SSD1306::getCursorX() + 8, Adafruit_SSD1306::getCursorY());
-  Adafruit_SSD1306::print("Current"); 
+  Adafruit_SSD1306::print("     Current      "); 
   Adafruit_SSD1306::drawBitmap(Adafruit_SSD1306::getCursorX(), Adafruit_SSD1306::getCursorY(), arrow_down, 8, 8, WHITE);
   Adafruit_SSD1306::println("");
 
@@ -144,4 +145,14 @@ void Display::displayMeasurements(unsigned int POST_INTERVAL, unsigned long mill
 void Display::clear() {
   Adafruit_SSD1306::clearDisplay();
   Adafruit_SSD1306::setCursor(0,0); 
+}
+
+void Display::toggleScreen() {
+  turnedOn = !turnedOn;
+
+  if (!turnedOn){
+    Display::clear();
+    Adafruit_SSD1306::display();
+  }
+  
 }

@@ -6,11 +6,12 @@
 #include <PIR.h>
 #include <GY30.h>
 #include <API.h>
+#include <EEPROM.h>
 
 #include <Display.h>
 
 #define MEASURE_INTERVAL 10000
-#define POST_INTERVAL 1000 * 60 * 15
+#define POST_INTERVAL 1000 * 60
 #define PIR_INTERVAL 3000
 #define BTN_DEBOUNCE_TIME 200
 
@@ -35,8 +36,6 @@ unsigned int lightLevel = 0;
 unsigned int btnDebounce = 0;
 
 void collectMeasurements() {
-  Serial.println("Collecting measurements");
-
   temp = bmp280.readTemperature();
   pressure = bmp280.readPressure() / 100;
   RH = dht.readHumidity();
@@ -72,6 +71,7 @@ void saveConfigFallback () {
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 void setup() {
   Serial.begin(115200);
+  EEPROM.begin(512);
 
   pinMode(D6, INPUT);
 
@@ -85,7 +85,7 @@ void setup() {
   wifiManager.setAPCallback(configModeCallback);
   wifiManager.setSaveConfigCallback(saveConfigFallback);
 
-  if (!wifiManager.autoConnect("Home-meter")) {
+  if (!wifiManager.autoConnect("Labkom")) {
     Serial.println("Failed to connect and hit timeout");
 
     display.println("Connection failed!");
@@ -129,18 +129,19 @@ void setup() {
   display.println("Checking server...");
   display.display();
   
-  switch (api.setup()){
-  case -1:
+  while (api.setup() < 0) {  
     display.clear();
-    display.println("Server offline");
+    display.println("Connection failed");
+    display.println("Retrying connection");
     display.display();
-    delay(1000);
-    break;
-  
-  default:
-    break;
+    delay(5000);
   }
-  
+
+  display.clear();
+  display.println("Connection success!");
+  display.display();
+  delay(1000);
+
   collectMeasurements();
 }
 
@@ -151,14 +152,18 @@ void loop() {
   if((millisCurrent - millisLastPost) >= POST_INTERVAL) {
     collectMeasurements();
   
-    api.sendMeasurements(
+    if(api.sendMeasurements(
       temp,
       RH,
       pressure,
       lightLevel,
       movement,
       HI
-    );
+    ) < 0) {
+      display.clear();
+      display.println("Connection failed!");
+      display.display();
+    }
 
     movement = 0;
     millisLastPost = millisCurrent;
@@ -181,7 +186,6 @@ void loop() {
 
   // Toggle screen on btn press
   if (digitalRead(D6)){
-    Serial.println("Btn pressed");
 
     // Debounce prevention
     if ((millisCurrent - btnDebounce) >= BTN_DEBOUNCE_TIME) {

@@ -11,7 +11,7 @@
 #include <Display.h>
 
 #define MEASURE_INTERVAL 10000
-#define POST_INTERVAL 1000 * 60
+#define POST_INTERVAL 1000 * 30
 #define PIR_INTERVAL 3000
 #define BTN_DEBOUNCE_TIME 200
 
@@ -20,7 +20,7 @@ PIR pir(D5);
 DHT dht(D3, DHT11);
 GY30 gy30;
 BMP280 bmp280;
-API api("http://192.168.1.27:81/api");
+API api("https://labkom.herokuapp.com");
 Display display = Display(128, 64, &Wire);
 
 unsigned long millisCurrent;

@@ -8,13 +8,13 @@
 
 class API {
     private:
-        String url;
+        String baseUrl;
         
         void writeStringToEEPROM(int addrOffset, const String &strToWrite);
         String readStringFromEEPROM(int addrOffset);
         
     public:
-        API(String url);
+        API(String baseUrl);
 
         int setup();
         

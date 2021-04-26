@@ -2,12 +2,12 @@
 
 /*!
     @brief Constructor for API object.
-    @param url
-    Server url
+    @param baseUrl
+    Server base url
     @note Requires EEPROM init before starting.
 */
-  API::API(String url) {
-    this->url = url;
+  API::API(String baseUrl) {
+    this->baseUrl = baseUrl;
   }
 
 /*!
@@ -51,11 +51,13 @@ String API::readStringFromEEPROM(int addrOffset) {
     @note Requires EEPROM init before starting.
 */
 int API::setup() {
-  WiFiClient client;
+  WiFiClientSecure client;
   HTTPClient http;
 
+  client.setInsecure();
+
   http.setTimeout(10000); //Let it sit on a long timeout.  
-  http.begin(client, url + "/monitor");
+  http.begin(client, baseUrl + "/api/monitor");
   http.addHeader("Content-Type", "application/json");
   
   int httpCode = http.POST("{\"mac_address\":\"" + WiFi.macAddress() + "\"}");
@@ -75,6 +77,8 @@ int API::setup() {
     }
 
   http.end();  
+
+  Serial.println(httpCode);
 
   return httpCode;
 }
@@ -106,15 +110,16 @@ int API::sendMeasurements(
     byte movement,
     float heatIndex) 
   {
-    WiFiClient client;
+    WiFiClientSecure client;
     HTTPClient http;
 
-    http.begin(client, url + "/measurement");
+    client.setInsecure();
+
+    http.begin(client, baseUrl + "/api/measurement");
     http.addHeader("Content-Type", "application/json");
-    http.setTimeout(5000);
+    http.setTimeout(10000);
 
     String token = API::readStringFromEEPROM(0);
-    Serial.println(token);
 
     int httpCode = http.POST(
         "{\"monitor_mac\":\"" + (String)WiFi.macAddress() + "\"" +
@@ -126,18 +131,16 @@ int API::sendMeasurements(
         ",\"heat_index\":\"" + (String)heatIndex +"\"" +
         ",\"air_pressure\":\"" + (String)air_pressure + "\"}");
 
-    Serial.println(url + "/measurement");
+    Serial.println(baseUrl + "/api/measurement");
     
     if (httpCode > 0) {
       Serial.printf("[HTTP] POST... code: %d\n", httpCode);
-
-      if (httpCode == HTTP_CODE_OK) {
-        const String& payload = http.getString();
-        Serial.println("Measurements saved!");
-      }
     } else {
       Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
     }
+
+    const String& payload = http.getString();
+    Serial.println(payload);
 
     http.end();
 

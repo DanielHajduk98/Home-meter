@@ -24,6 +24,7 @@ void API::writeStringToEEPROM(int addrOffset, const String &strToWrite) {
   for (int i = 0; i < len; i++) {
     EEPROM.write(addrOffset + 1 + i, strToWrite[i]);
   }
+  EEPROM.commit();
 }
 
 /*!
@@ -76,6 +77,7 @@ int API::setup() {
       Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
     }
 
+  Serial.println(API::readStringFromEEPROM(0));
   http.end();  
 
   Serial.println(httpCode);
@@ -132,7 +134,7 @@ int API::sendMeasurements(
         ",\"air_pressure\":\"" + (String)air_pressure + "\"}");
 
     Serial.println(baseUrl + "/api/measurement");
-    
+
     if (httpCode > 0) {
       Serial.printf("[HTTP] POST... code: %d\n", httpCode);
     } else {

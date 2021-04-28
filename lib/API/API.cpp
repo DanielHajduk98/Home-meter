@@ -1,5 +1,10 @@
 #include <API.h>
 
+struct apiCallResult {
+     int httpCode;
+     String response;
+};
+
 /*!
     @brief Constructor for API object.
     @param baseUrl
@@ -51,38 +56,18 @@ String API::readStringFromEEPROM(int addrOffset) {
     @return Http response code.
     @note Requires EEPROM init before starting.
 */
-int API::setup() {
-  WiFiClientSecure client;
-  HTTPClient http;
+int API::setup() {  
+  String payload = "{\"mac_address\":\"" + WiFi.macAddress() + "\"}";
 
-  client.setInsecure();
+  apiCallResult result = API::POST("/api/monitor", payload, 10000);
 
-  http.setTimeout(10000); //Let it sit on a long timeout.  
-  http.begin(client, baseUrl + "/api/monitor");
-  http.addHeader("Content-Type", "application/json");
-  
-  int httpCode = http.POST("{\"mac_address\":\"" + WiFi.macAddress() + "\"}");
-
-  if (httpCode > 0) {
-      if (httpCode == HTTP_CODE_OK) {
-        const String& payload = http.getString();
-
-        Serial.println("Response: " + payload);
-
-        if(payload != "Monitor already in DB") {
-          API::writeStringToEEPROM(0, payload);
-        }
-      }
-    } else {
-      Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+  if (result.httpCode > 0) {
+    if(result.response != "Monitor already in DB") {
+      API::writeStringToEEPROM(0, "cJ8ccOSte3eysL6WKLv77pOMLXjMo303");
     }
+  } 
 
-  Serial.println(API::readStringFromEEPROM(0));
-  http.end();  
-
-  Serial.println(httpCode);
-
-  return httpCode;
+  return result.httpCode;
 }
 
 
@@ -101,8 +86,6 @@ int API::setup() {
     @param heatIndex
     Heat index value
     @return Http response code.
-    @note Requires all data to be NOT null.
-    @note Requires EEPROM init before starting.
 */
 int API::sendMeasurements(
     float temperature,
@@ -112,18 +95,9 @@ int API::sendMeasurements(
     byte movement,
     float heatIndex) 
   {
-    WiFiClientSecure client;
-    HTTPClient http;
-
-    client.setInsecure();
-
-    http.begin(client, baseUrl + "/api/measurement");
-    http.addHeader("Content-Type", "application/json");
-    http.setTimeout(10000);
-
     String token = API::readStringFromEEPROM(0);
 
-    int httpCode = http.POST(
+    String payload = 
         "{\"monitor_mac\":\"" + (String)WiFi.macAddress() + "\"" +
         ",\"token\":\"" + token + "\"" +
         ",\"temperature\":\"" + (String)temperature + "\"" +
@@ -131,20 +105,54 @@ int API::sendMeasurements(
         ",\"luminosity\":\"" + (String)lumionsity + "\"" +
         ",\"movement\":\"" + (String)movement +"\"" +
         ",\"heat_index\":\"" + (String)heatIndex +"\"" +
-        ",\"air_pressure\":\"" + (String)air_pressure + "\"}");
+        ",\"air_pressure\":\"" + (String)air_pressure + "\"}";
 
-    Serial.println(baseUrl + "/api/measurement");
+    apiCallResult result = API::POST("/api/measurement", payload);
 
-    if (httpCode > 0) {
-      Serial.printf("[HTTP] POST... code: %d\n", httpCode);
-    } else {
-      Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
-    }
+    return result.httpCode;
+}
 
-    const String& payload = http.getString();
-    Serial.println(payload);
+/*!
+    @brief POST API call.
+    @param endpoint
+    Called endpoint. Start with /
+    @param payload
+    Data being send with POST request in JSON format.
+    @param timeout
+    Optional timeout value
+    @return Returns  struct with http code and response payload.
+    @note On http response will be blank. To fix that configure your server to send Content-Length in header.
+*/
+API::apiCallResult API::POST(String endpoint, String payload, int timeout) {
+  // For SSL use WiFiClientSecure and set insecure
+  WiFiClientSecure client;
+  client.setInsecure();
 
-    http.end();
+  // For http use WiFiClient
+  // WiFiClient client;   
+  
+  HTTPClient http;
 
-    return httpCode;
+  http.begin(client, baseUrl + endpoint);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(timeout);
+
+  int httpCode = http.POST(payload);
+
+  Serial.println(baseUrl + endpoint);
+
+  if (httpCode > 0) {
+    Serial.printf("[HTTP] POST... code: %d\n", httpCode);
+  } else {
+    Serial.printf("[HTTP] POST... failed, error: %s\n", http.errorToString(httpCode).c_str());
+  }
+
+  const String& response = http.getString();
+  Serial.println("response: " + response);
+
+  apiCallResult result = { httpCode, response };
+
+  http.end();
+
+  return result;
 }

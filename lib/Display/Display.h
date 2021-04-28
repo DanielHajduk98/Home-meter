@@ -19,7 +19,7 @@ class Display : public Adafruit_SSD1306 {
         void begin(uint8_t vcs, uint8_t addr);
         void displayMeasurements(unsigned int POST_INTERVAL, unsigned long millisCurrent, unsigned long millisLastPost, float temp, float RH, float HI, unsigned int pressure, unsigned int lightLevel, unsigned int movement);
         void clear();
-        void toggleScreen();
+        bool toggleScreen();
 };
 
 #endif

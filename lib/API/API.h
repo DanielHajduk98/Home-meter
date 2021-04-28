@@ -10,9 +10,15 @@ class API {
     private:
         String baseUrl;
         
+        struct apiCallResult {
+            int httpCode;
+            String response;
+        };
+
         void writeStringToEEPROM(int addrOffset, const String &strToWrite);
         String readStringFromEEPROM(int addrOffset);
-        
+        apiCallResult POST(String endpoint, String payload, int timeout = 5000);
+
     public:
         API(String baseUrl);
 

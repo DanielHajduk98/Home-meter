@@ -79,8 +79,7 @@ static const unsigned char PROGMEM arrow_down[] = {
 
 
 Display::Display(byte w, byte h, TwoWire *wire)
-    : Adafruit_SSD1306(w, h, wire)
-{
+    : Adafruit_SSD1306(w, h, wire) {
     turnedOn = true;
 }
 
@@ -111,6 +110,12 @@ void Display::drawHeatIndexEmoji(float HI) {
 }
 
 void Display::displayMeasurements(unsigned int POST_INTERVAL, unsigned long millisCurrent, unsigned long millisLastPost, float temp, float RH, float HI, unsigned int pressure, unsigned int lightLevel, unsigned int movement) {
+  if (!turnedOn){
+    Display::clear();
+    Adafruit_SSD1306::display();
+    return;
+  }
+  
   int progress = ((millisCurrent - millisLastPost) * 128) / (POST_INTERVAL); 
 
   Adafruit_SSD1306::setCursor(0,0);
@@ -147,12 +152,13 @@ void Display::clear() {
   Adafruit_SSD1306::setCursor(0,0); 
 }
 
-void Display::toggleScreen() {
+bool Display::toggleScreen() {
   turnedOn = !turnedOn;
 
   if (!turnedOn){
     Display::clear();
     Adafruit_SSD1306::display();
   }
-  
+
+  return turnedOn;
 }

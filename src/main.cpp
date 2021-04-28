@@ -11,7 +11,7 @@
 #include <Display.h>
 
 #define MEASURE_INTERVAL 10000
-#define POST_INTERVAL 1000 * 30
+#define POST_INTERVAL 1000 * 60 * 1
 #define PIR_INTERVAL 3000
 #define BTN_DEBOUNCE_TIME 200
 
@@ -33,6 +33,8 @@ float HI = 0;
 unsigned int pressure = 0;
 unsigned int movement = 0;
 unsigned int lightLevel = 0;
+
+int connectionStatus = -1;
 unsigned int btnDebounce = 0;
 
 void collectMeasurements() {
@@ -145,28 +147,44 @@ void setup() {
   collectMeasurements();
 }
 
+short resend = 0;
 void loop() {  
   millisCurrent = millis();
 
   //Send measurement
   if((millisCurrent - millisLastPost) >= POST_INTERVAL) {
-    collectMeasurements();
-  
-    if(api.sendMeasurements(
-      temp,
-      RH,
-      pressure,
-      lightLevel,
-      movement,
-      HI
-    ) < 0) {
-      display.clear();
-      display.println("Connection failed!");
-      display.display();
+    while (connectionStatus < 0) {
+      collectMeasurements();
+
+      connectionStatus = api.sendMeasurements(
+        temp,
+        RH,
+        pressure,
+        lightLevel,
+        movement,
+        HI
+      );
+
+      if(connectionStatus < 0) {
+        resend = resend = 2 ? 0 : resend + 1;
+        display.clear();
+        display.println("Connection failed!");
+        display.println("Trying to resend");
+      
+        for (short i = 0; i < 2; i++){
+          display.print(".");
+        }
+      
+        display.display();
+      }
+
+      delay(5000);
+      Serial.println(connectionStatus);
     }
 
+    connectionStatus = -1;
     movement = 0;
-    millisLastPost = millisCurrent;
+    millisLastPost = millis();
   } 
 
   //Get movement every 3s
@@ -175,22 +193,15 @@ void loop() {
     pir.millisLast = millisCurrent;
   }
 
-  //Check wifi. Show err if lost connection
-  if (WiFi.status() == 6){
-    display.clear();
-    display.println("Lost WiFi connection!");
-    display.display();
-  } else if(display.turnedOn) {
-    display.displayMeasurements(POST_INTERVAL, millisCurrent, millisLastPost, temp, RH, HI, pressure, lightLevel, movement);
-  }
-
   // Toggle screen on btn press
   if (digitalRead(D6)){
 
     // Debounce prevention
     if ((millisCurrent - btnDebounce) >= BTN_DEBOUNCE_TIME) {
-      display.toggleScreen();
-      collectMeasurements();
+      if(display.toggleScreen()) {
+        collectMeasurements();
+        display.displayMeasurements(POST_INTERVAL, millisCurrent, millisLastPost, temp, RH, HI, pressure, lightLevel, movement);
+      }
     }
 
     btnDebounce = millisCurrent;
@@ -200,4 +211,7 @@ void loop() {
   if(display.turnedOn && (millisCurrent - millisLastMeasurement) >= MEASURE_INTERVAL) {
     collectMeasurements();
   }
+
+  // Refresh screen
+  display.displayMeasurements(POST_INTERVAL, millisCurrent, millisLastPost, temp, RH, HI, pressure, lightLevel, movement);
 }

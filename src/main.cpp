@@ -78,7 +78,9 @@ void setup() {
   pinMode(D6, INPUT);
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  
+  display.println("Loading...");
+  display.display();
+
   display.println("Starting Wifi...");
   display.display();
   

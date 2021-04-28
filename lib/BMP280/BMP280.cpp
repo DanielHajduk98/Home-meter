@@ -1,8 +1,16 @@
 #include <BMP280.h>
 
+/*!
+    @brief  Extended Adafruit_BMP280 class constructor.
+*/
 BMP280::BMP280()
   : Adafruit_BMP280() {}
 
+/*!
+    @brief  Extended Adafruit_BMP280 begin function.
+            Prints error and sets sampling mode.
+    @return Returns true on success. 
+*/
 bool BMP280::begin() {
   if (!Adafruit_BMP280::begin(0x76)) {
     Serial.println("BMP280 connection error - check connection!");

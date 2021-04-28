@@ -6,21 +6,21 @@ struct apiCallResult {
 };
 
 /*!
-    @brief Constructor for API object.
-    @param baseUrl
-    Server base url
-    @note Requires EEPROM init before starting.
+    @brief  Constructor for API object.
+    @param  baseUrl
+            Server base url
+    @note   Requires EEPROM init before starting.
 */
   API::API(String baseUrl) {
     this->baseUrl = baseUrl;
   }
 
 /*!
-    @brief Write String to EEPROM
-    @param addrOffset
-    Starting EEPROM addres from where we will start reading
-    @param strToWrite 
-    A const reference to a String object.
+    @brief  Write String to EEPROM
+    @param  addrOffset
+            Starting EEPROM addres from where we will start reading
+    @param  strToWrite 
+            A const reference to a String object.
     @return void.
 */
 void API::writeStringToEEPROM(int addrOffset, const String &strToWrite) {
@@ -33,11 +33,11 @@ void API::writeStringToEEPROM(int addrOffset, const String &strToWrite) {
 }
 
 /*!
-    @brief Read String from EEPROM
-    @param addrOffset
-    Starting EEPROM addres from where we will start reading
+    @brief  Read String from EEPROM
+    @param  addrOffset
+            Starting EEPROM addres from where we will start reading
     @return Http response code.
-    @note Requires EEPROM init before starting.
+    @note   Requires EEPROM init before starting.
 */
 String API::readStringFromEEPROM(int addrOffset) {
   int newStrLen = EEPROM.read(addrOffset);
@@ -51,10 +51,10 @@ String API::readStringFromEEPROM(int addrOffset) {
 }
 
 /*!
-    @brief Ask server for token and check if server works.
-    Saves token in EEPROM
+    @brief  Ask server for token and check if server works.
+            Saves token in EEPROM
     @return Http response code.
-    @note Requires EEPROM init before starting.
+    @note   Requires EEPROM init before starting.
 */
 int API::setup() {  
   String payload = "{\"mac_address\":\"" + WiFi.macAddress() + "\"}";
@@ -72,19 +72,19 @@ int API::setup() {
 
 
 /*!
-    @brief Sends data to server.
-    @param temperature
-    Temperature value
-    @param humidity
-    Relative humidity value
-    @param air_pressure
-    Air pressure value in hPa
-    @param luminosity
-    Luminosity value
-    @param movement
-    Movement value
-    @param heatIndex
-    Heat index value
+    @brief  Sends data to server.
+    @param  temperature
+            Temperature value
+    @param  humidity
+            Relative humidity value
+    @param  air_pressure
+            Air pressure value in hPa
+    @param  luminosity
+            Luminosity value
+    @param  movement
+            Movement value
+    @param  heatIndex
+            Heat index value
     @return Http response code.
 */
 int API::sendMeasurements(
@@ -113,15 +113,15 @@ int API::sendMeasurements(
 }
 
 /*!
-    @brief POST API call.
-    @param endpoint
-    Called endpoint. Start with /
-    @param payload
-    Data being send with POST request in JSON format.
-    @param timeout
-    Optional timeout value
+    @brief  POST API call.
+    @param  endpoint
+            Called endpoint. Start with /
+    @param  payload
+            Data being send with POST request in JSON format.
+    @param  timeout
+            Optional timeout value
     @return Returns  struct with http code and response payload.
-    @note On http response will be blank. To fix that configure your server to send Content-Length in header.
+    @note   On http response will be blank. To fix that configure your server to send Content-Length in header.
 */
 API::apiCallResult API::POST(String endpoint, String payload, int timeout) {
   // For SSL use WiFiClientSecure and set insecure

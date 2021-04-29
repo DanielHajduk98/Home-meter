@@ -63,7 +63,7 @@ int API::setup() {
 
   if (result.httpCode > 0) {
     if(result.response != "Monitor already in DB") {
-      API::writeStringToEEPROM(0, "cJ8ccOSte3eysL6WKLv77pOMLXjMo303");
+      API::writeStringToEEPROM(0, result.response);
     }
   } 
 
@@ -108,7 +108,7 @@ int API::sendMeasurements(
         ",\"air_pressure\":\"" + (String)air_pressure + "\"}";
 
     apiCallResult result = API::POST("/api/measurement", payload);
-
+        
     return result.httpCode;
 }
 

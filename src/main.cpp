@@ -11,7 +11,7 @@
 #include <Display.h>
 
 #define MEASURE_INTERVAL 10000
-#define POST_INTERVAL 1000 * 60 * 1
+#define POST_INTERVAL 1000 * 60 * 15
 #define PIR_INTERVAL 3000
 #define BTN_DEBOUNCE_TIME 200
 
@@ -34,7 +34,7 @@ unsigned int pressure = 0;
 unsigned int movement = 0;
 unsigned int lightLevel = 0;
 
-int connectionStatus = -1;
+int connectionCode = -1;
 unsigned int btnDebounce = 0;
 
 void collectMeasurements() {
@@ -133,14 +133,20 @@ void setup() {
   display.println("Checking server...");
   display.display();
   
-  while (api.setup() < 0) {  
-    display.clear();
-    display.println("Connection failed");
-    display.println("Retrying connection");
-    display.display();
-    delay(5000);
+  while (connectionCode >= 300 || connectionCode < 0) {
+    connectionCode = api.setup();
+
+    if (connectionCode >= 300 || connectionCode < 0) {
+      display.clear();
+      display.println("Connection failed");
+      display.println("Http code: " + (String)connectionCode);
+      display.println("Retrying connection");
+      display.display();
+      delay(5000); 
+    }
   }
 
+  connectionCode = -1;
   display.clear();
   display.println("Connection success!");
   display.display();
@@ -149,16 +155,17 @@ void setup() {
   collectMeasurements();
 }
 
-short resend = 0;
 void loop() {  
   millisCurrent = millis();
 
   //Send measurement
   if((millisCurrent - millisLastPost) >= POST_INTERVAL) {
-    while (connectionStatus < 0) {
+    short resend = 0;
+
+    while (connectionCode >= 300 || connectionCode < 0) {
       collectMeasurements();
 
-      connectionStatus = api.sendMeasurements(
+      connectionCode = api.sendMeasurements(
         temp,
         RH,
         pressure,
@@ -167,24 +174,25 @@ void loop() {
         HI
       );
 
-      if(connectionStatus < 0) {
-        resend = resend = 2 ? 0 : resend + 1;
+      if(connectionCode >= 300 || connectionCode < 0) {
+        if (resend == 3) resend = 0;
+
         display.clear();
         display.println("Connection failed!");
-        display.println("Trying to resend");
-      
-        for (short i = 0; i < 2; i++){
+        display.println("Http code: " + (String)connectionCode);
+        display.print("Trying to resend");
+        for (short i = 0; i <= resend; i++){
           display.print(".");
         }
-      
+        display.println("");
         display.display();
-      }
 
-      delay(5000);
-      Serial.println(connectionStatus);
+        resend++;
+        delay(5000);
+      }
     }
 
-    connectionStatus = -1;
+    connectionCode = -1;
     movement = 0;
     millisLastPost = millis();
   } 

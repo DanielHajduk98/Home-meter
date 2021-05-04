@@ -20,7 +20,7 @@ PIR pir(D5);
 DHT dht(D3, DHT11);
 GY30 gy30;
 BMP280 bmp280;
-API api("https://labkom.herokuapp.com");
+API api("https://labkom-api.herokuapp.com");
 Display display = Display(128, 64, &Wire);
 
 unsigned long millisCurrent;
@@ -73,7 +73,6 @@ void saveConfigFallback () {
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 void setup() {
   Serial.begin(115200);
-  EEPROM.begin(512);
 
   pinMode(D6, INPUT);
 

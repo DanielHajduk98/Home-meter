@@ -9,45 +9,50 @@ struct apiCallResult {
     @brief  Constructor for API object.
     @param  baseUrl
             Server base url
-    @note   Requires EEPROM init before starting.
 */
   API::API(String baseUrl) {
     this->baseUrl = baseUrl;
   }
 
 /*!
-    @brief  Write String to EEPROM
+    @brief  Write Token to memory
     @param  addrOffset
             Starting EEPROM addres from where we will start reading
-    @param  strToWrite 
+    @param  token 
             A const reference to a String object.
     @return void.
 */
-void API::writeStringToEEPROM(int addrOffset, const String &strToWrite) {
-  byte len = strToWrite.length();
+void API::saveToken(int addrOffset, const String &token) {
+  EEPROM.begin(512);
+  
+  byte len = token.length();
   EEPROM.write(addrOffset, len);
   for (int i = 0; i < len; i++) {
-    EEPROM.write(addrOffset + 1 + i, strToWrite[i]);
+    EEPROM.write(addrOffset + 1 + i, token[i]);
   }
-  EEPROM.commit();
+  
+  EEPROM.end();
 }
 
 /*!
-    @brief  Read String from EEPROM
+    @brief  Read API token from memory
     @param  addrOffset
             Starting EEPROM addres from where we will start reading
     @return Http response code.
-    @note   Requires EEPROM init before starting.
 */
-String API::readStringFromEEPROM(int addrOffset) {
+String API::readToken(int addrOffset) {
+  EEPROM.begin(512);
+
   int newStrLen = EEPROM.read(addrOffset);
-  char data[newStrLen + 1];
+  char token[newStrLen + 1];
   for (int i = 0; i < newStrLen; i++)
   {
-    data[i] = EEPROM.read(addrOffset + 1 + i);
+    token[i] = EEPROM.read(addrOffset + 1 + i);
   }
-  data[newStrLen] = '\0';
-  return String(data);
+  token[newStrLen] = '\0';
+
+  EEPROM.end();
+  return String(token);
 }
 
 /*!
@@ -63,7 +68,7 @@ int API::setup() {
 
   if (result.httpCode > 0) {
     if(result.response != "Monitor already in DB") {
-      API::writeStringToEEPROM(0, result.response);
+      API::saveToken(0, result.response);
     }
   } 
 
@@ -95,7 +100,7 @@ int API::sendMeasurements(
     byte movement,
     float heatIndex) 
   {
-    String token = API::readStringFromEEPROM(0);
+    String token = API::readToken(0);
 
     String payload = 
         "{\"monitor_mac\":\"" + (String)WiFi.macAddress() + "\"" +

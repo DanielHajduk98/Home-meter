@@ -15,8 +15,8 @@ class API {
             String response;
         };
 
-        void writeStringToEEPROM(int addrOffset, const String &strToWrite);
-        String readStringFromEEPROM(int addrOffset);
+        void saveToken(int addrOffset, const String &token);
+        String readToken(int addrOffset);
         apiCallResult POST(String endpoint, String payload, int timeout = 5000);
 
     public:

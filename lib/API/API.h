@@ -27,8 +27,8 @@ class API {
         int sendMeasurements(
             float temperature,
             float humidity,
-            float air_pressure,
-            float lumionsity,
+            float pressure,
+            float luminosity,
             byte movement,
             float heatIndex);
 };

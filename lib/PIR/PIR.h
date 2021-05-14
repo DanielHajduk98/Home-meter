@@ -6,10 +6,10 @@
 class PIR {
     private:
         byte pin;
-        void init();
 
     public:
         PIR(byte pin);
+        void init();
         unsigned int millisLast;
         byte read();
 };

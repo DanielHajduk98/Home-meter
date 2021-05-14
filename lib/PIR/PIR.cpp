@@ -7,7 +7,6 @@
 */
 PIR::PIR(byte pin) {
     this->pin = pin;
-    init();
 }
 
 

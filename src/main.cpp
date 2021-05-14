@@ -23,10 +23,12 @@ BMP280 bmp280;
 API api("https://labkom-api.herokuapp.com");
 Display display = Display(128, 64, &Wire);
 
+// Time
 unsigned long millisCurrent;
 unsigned long millisLastMeasurement = 0;
 unsigned long millisLastPost = 0;
 
+// Measurement
 float temp = 0;
 float RH = 0;
 float HI = 0;
@@ -34,8 +36,10 @@ unsigned int pressure = 0;
 unsigned int movement = 0;
 unsigned int lightLevel = 0;
 
+// Connection
 int connectionCode = -1;
 unsigned int btnDebounce = 0;
+short retry = 0;
 
 void collectMeasurements() {
   temp = bmp280.readTemperature();
@@ -48,7 +52,7 @@ void collectMeasurements() {
 }
 
 void configModeCallback (WiFiManager *myWiFiManager) {
-  display.dim(false);
+  Serial.println("Entered config mode callback");
   display.clearDisplay();
   display.setCursor(0,0);
   display.println("No saved WiFi found.");
@@ -59,15 +63,6 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   display.display();
 }
 
-void saveConfigFallback () {
-  Serial.println("Entered save confiig falback mode");
-  display.dim(false);
-  display.clearDisplay();
-  display.setCursor(0,0);
-  display.display();
-}
-
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 // Setup + Loop
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -75,6 +70,8 @@ void setup() {
   Serial.begin(115200);
 
   pinMode(D6, INPUT);
+
+  pir.init();
 
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.println("Loading...");
@@ -85,8 +82,8 @@ void setup() {
   
   // reset settings - wipe credentials for testing
   // wifiManager.resetSettings();
+  WiFi.setAutoConnect(true);
   wifiManager.setAPCallback(configModeCallback);
-  wifiManager.setSaveConfigCallback(saveConfigFallback);
 
   if (!wifiManager.autoConnect("Labkom")) {
     Serial.println("Failed to connect and hit timeout");
@@ -129,38 +126,54 @@ void setup() {
    delay(1000);
   }
    
-  display.println("Checking server...");
-  display.display();
+  // display.println("Checking server...");
+  // display.display();
   
-  while (connectionCode >= 300 || connectionCode < 0) {
-    connectionCode = api.setup();
+  // while (connectionCode >= 300 || connectionCode < 0) {
+  //   connectionCode = api.setup();
 
-    if (connectionCode >= 300 || connectionCode < 0) {
-      display.clear();
-      display.println("Connection failed");
-      display.println("Http code: " + (String)connectionCode);
-      display.println("Retrying connection");
-      display.display();
-      delay(5000); 
-    }
-  }
+  //   if (connectionCode >= 300 || connectionCode < 0) {
+  //     display.clear();
+  //     display.println("Connection failed");
+  //     display.println("Http code: " + (String)connectionCode);
+  //     display.println("Retrying connection");
+  //     display.display();
+  //     delay(5000); 
+  //   }
+  // }
 
-  connectionCode = -1;
-  display.clear();
-  display.println("Connection success!");
-  display.display();
+  // connectionCode = -1;
+  // display.clear();
+  // display.println("Connection success!");
+  // display.display();
   delay(1000);
 
   collectMeasurements();
 }
 
 void loop() {  
+  if (WiFi.status() != WL_CONNECTED) {
+    if (retry == 3) retry = 0;
+
+    display.clear();
+    display.println("WiFi signal lost!");
+    display.print("Reconnecting");
+    for (short i = 0; i <= retry; i++){
+      display.print(".");
+    }
+    display.println("");
+    display.display();
+    delay(1000);
+    retry++;
+    return;
+  }
+
   millisCurrent = millis();
 
   //Send measurement
   if((millisCurrent - millisLastPost) >= POST_INTERVAL) {
-    short resend = 0;
-
+    retry = 0;
+    
     while (connectionCode >= 300 || connectionCode < 0) {
       collectMeasurements();
 
@@ -174,19 +187,19 @@ void loop() {
       );
 
       if(connectionCode >= 300 || connectionCode < 0) {
-        if (resend == 3) resend = 0;
+        if (retry == 3) retry = 0;
 
         display.clear();
         display.println("Connection failed!");
         display.println("Http code: " + (String)connectionCode);
         display.print("Trying to resend");
-        for (short i = 0; i <= resend; i++){
+        for (short i = 0; i <= retry; i++){
           display.print(".");
         }
         display.println("");
         display.display();
 
-        resend++;
+        retry++;
         delay(5000);
       }
     }
@@ -217,10 +230,11 @@ void loop() {
   }
   
   //Collect measurement when screen is turned on
-  if(display.turnedOn && (millisCurrent - millisLastMeasurement) >= MEASURE_INTERVAL) {
-    collectMeasurements();
-  }
+  if(display.turnedOn) {
+    if ((millisCurrent - millisLastMeasurement) >= MEASURE_INTERVAL){
+      collectMeasurements();
+    }
 
-  // Refresh screen
-  display.displayMeasurements(POST_INTERVAL, millisCurrent, millisLastPost, temp, RH, HI, pressure, lightLevel, movement);
+    display.displayMeasurements(POST_INTERVAL, millisCurrent, millisLastPost, temp, RH, HI, pressure, lightLevel, movement);
+  }  
 }

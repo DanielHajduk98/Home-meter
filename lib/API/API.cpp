@@ -66,7 +66,7 @@ int API::setup() {
 
   apiCallResult result = API::POST("/api/monitor", payload, 10000);
 
-  if (result.httpCode > 0) {
+  if (result.httpCode == 200) {
     if(result.response != "Monitor already in DB") {
       API::saveToken(0, result.response);
     }
@@ -95,8 +95,8 @@ int API::setup() {
 int API::sendMeasurements(
     float temperature,
     float humidity,
-    float air_pressure,
-    float lumionsity,
+    float pressure,
+    float luminosity,
     byte movement,
     float heatIndex) 
   {
@@ -107,10 +107,10 @@ int API::sendMeasurements(
         ",\"token\":\"" + token + "\"" +
         ",\"temperature\":\"" + (String)temperature + "\"" +
         ",\"humidity\":\"" + (String)humidity + "\"" +
-        ",\"luminosity\":\"" + (String)lumionsity + "\"" +
+        ",\"luminosity\":\"" + (String)luminosity + "\"" +
         ",\"movement\":\"" + (String)movement +"\"" +
         ",\"heat_index\":\"" + (String)heatIndex +"\"" +
-        ",\"air_pressure\":\"" + (String)air_pressure + "\"}";
+        ",\"air_pressure\":\"" + (String)pressure + "\"}";
 
     apiCallResult result = API::POST("/api/measurement", payload);
         

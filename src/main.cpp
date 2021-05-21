@@ -71,8 +71,6 @@ void setup() {
 
   pinMode(D6, INPUT);
 
-  pir.init();
-
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.println("Loading...");
   display.display();
@@ -83,6 +81,8 @@ void setup() {
   // reset settings - wipe credentials for testing
   // wifiManager.resetSettings();
   WiFi.setAutoConnect(true);
+  WiFi.persistent(true);
+
   wifiManager.setAPCallback(configModeCallback);
 
   if (!wifiManager.autoConnect("Labkom")) {
@@ -96,6 +96,8 @@ void setup() {
     display.display();
   }
   
+  pir.init();
+
   display.println("Starting DHT...");
   display.display();
 
@@ -126,33 +128,33 @@ void setup() {
    delay(1000);
   }
    
-  // display.println("Checking server...");
-  // display.display();
+  display.println("Checking server...");
+  display.display();
   
-  // while (connectionCode >= 300 || connectionCode < 0) {
-  //   connectionCode = api.setup();
+  while (connectionCode >= 300 || connectionCode < 0) {
+    connectionCode = api.setup();
 
-  //   if (connectionCode >= 300 || connectionCode < 0) {
-  //     display.clear();
-  //     display.println("Connection failed");
-  //     display.println("Http code: " + (String)connectionCode);
-  //     display.println("Retrying connection");
-  //     display.display();
-  //     delay(5000); 
-  //   }
-  // }
+    if (connectionCode >= 300 || connectionCode < 0) {
+      display.clear();
+      display.println("Connection failed");
+      display.println("Http code: " + (String)connectionCode);
+      display.println("Retrying connection");
+      display.display();
+      delay(5000); 
+    }
+  }
 
-  // connectionCode = -1;
-  // display.clear();
-  // display.println("Connection success!");
-  // display.display();
+  connectionCode = -1;
+  display.clear();
+  display.println("Connection success!");
+  display.display();
   delay(1000);
 
   collectMeasurements();
 }
 
 void loop() {  
-  if (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED) {
     if (retry == 3) retry = 0;
 
     display.clear();
@@ -165,7 +167,6 @@ void loop() {
     display.display();
     delay(1000);
     retry++;
-    return;
   }
 
   millisCurrent = millis();

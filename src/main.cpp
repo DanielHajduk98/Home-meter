@@ -202,12 +202,13 @@ void loop() {
 
         retry++;
         delay(5000);
-      }
+      }      
     }
-
+    
     connectionCode = -1;
     movement = 0;
     millisLastPost = millis();
+    display.clear();
   } 
 
   //Get movement every 3s
@@ -232,10 +233,12 @@ void loop() {
   
   //Collect measurement when screen is turned on
   if(display.turnedOn) {
-    if ((millisCurrent - millisLastMeasurement) >= MEASURE_INTERVAL){
+    if ((millisCurrent - millisLastMeasurement) >= MEASURE_INTERVAL) {
       collectMeasurements();
     }
 
     display.displayMeasurements(POST_INTERVAL, millisCurrent, millisLastPost, temp, RH, HI, pressure, lightLevel, movement);
-  }  
+  } else {
+    display.clear();
+  }
 }

@@ -202,13 +202,15 @@ void loop() {
 
         retry++;
         delay(5000);
+      } else {
+        display.clear();
+        display.display();
       }      
     }
     
     connectionCode = -1;
     movement = 0;
     millisLastPost = millis();
-    display.clear();
   } 
 
   //Get movement every 3s
@@ -238,7 +240,5 @@ void loop() {
     }
 
     display.displayMeasurements(POST_INTERVAL, millisCurrent, millisLastPost, temp, RH, HI, pressure, lightLevel, movement);
-  } else {
-    display.clear();
   }
 }
